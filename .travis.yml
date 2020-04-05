@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t kysewtts/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true kysewtts/react-test npm run test
+
+after_success:
+  - docker build -t kysewtts/multi-client ./client
+  - docker build -t kysewtts/multi-nginx ./nginx
+  - docker build -t kysewtts/multi-server ./server
+  - docker build -t kysewtts/multi-worker ./worker
+  # Login to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take all the built images and push them to the Docker hub
+  - docker push kysewtts/multi-client
+  - docker push kysewtts/multi-server
+  - docker push kysewtts/multi-nginx
+  - docker push kysewtts/multi-worker
